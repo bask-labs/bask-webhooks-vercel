@@ -1,0 +1,16 @@
+#!/bin/sh
+# Enforces Conventional Commits and rejects coding-agent co-author trailers.
+# Installed by `npm install` via the "prepare" script (core.hooksPath=.githooks).
+msg=$(grep -v '^#' "$1")
+header=$(printf '%s\n' "$msg" | head -n1)
+
+if ! printf '%s' "$header" | grep -Eq '^(feat|fix|docs|chore|refactor|test|ci|build|perf|revert)(\([a-z0-9._/-]+\))?!?: [^ ].{0,71}$'; then
+  echo "commit-msg: header must be Conventional Commits, e.g. 'fix(queues): retry on 429'" >&2
+  echo "            got: $header" >&2
+  exit 1
+fi
+
+if printf '%s\n' "$msg" | grep -Eiq '^Co-Authored-By:.*(claude|copilot|cursor|codex|gemini|anthropic|openai|noreply@anthropic\.com)'; then
+  echo "commit-msg: drop the coding-agent Co-Authored-By trailer" >&2
+  exit 1
+fi

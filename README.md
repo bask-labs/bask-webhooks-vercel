@@ -83,6 +83,10 @@ vercel env pull
 vercel dev
 ```
 
+## Contributing
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). `npm install` installs a `commit-msg` hook that rejects anything else, and CI runs the same check. Coding agents must not add `Co-Authored-By` trailers.
+
 ## Next steps
 
 - [Deploy a webhook consumer on Vercel](https://docs.bask.health/platform/webhooks/vercel) - the full walkthrough of this template, step by step.
