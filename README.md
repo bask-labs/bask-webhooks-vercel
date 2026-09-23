@@ -1,6 +1,6 @@
 # bask-webhooks-vercel
 
-Catch [Bask](https://bask.health) webhooks on Vercel. Two functions: a receiver that checks your secret and drops each event on a Vercel Queue, and a consumer that does the work with retries that never touch Bask.
+Catch [Bask](https://bask.health) webhooks on Vercel with two functions and one queue between them.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Bask-Labs/bask-webhooks-vercel&project-name=bask-webhooks&repository-name=bask-webhooks&env=BASK_WEBHOOK_SECRET&envDescription=Shared%20secret%20Bask%20sends%20as%20Authorization%3A%20Bearer%20%3Csecret%3E&envLink=https://docs.bask.health/platform/webhooks/vercel)
 
@@ -12,7 +12,7 @@ Full guide: [docs.bask.health/platform/webhooks/vercel](https://docs.bask.health
 
 **Or from the terminal.**
 
-```bash
+```bash filename="terminal"
 gh repo create my-bask-webhooks --template Bask-Labs/bask-webhooks-vercel --clone
 cd my-bask-webhooks
 vercel env add BASK_WEBHOOK_SECRET production   # paste: openssl rand -hex 32
@@ -37,7 +37,7 @@ Save, then **Send Test Request**. `vercel logs --prod` shows the receipt and the
 
 ## Verify by hand
 
-```bash
+```bash filename="terminal"
 curl -s -X POST https://<your-project>.vercel.app/api/webhooks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $BASK_WEBHOOK_SECRET" \
@@ -47,9 +47,25 @@ curl -s -X POST https://<your-project>.vercel.app/api/webhooks \
 
 Drop the `Authorization` header and you get `401`.
 
+## How it works
+
+```text filename="Request path"
+Bask ─POST /api/webhooks─▶ api/webhooks.ts ─send("bask-events")─▶ Vercel Queue ─▶ api/queues.ts
+                           401 / 400 / 200                        retries here      your code
+```
+
+| File | Job | Edit it? |
+|---|---|---|
+| [`api/webhooks.ts`](api/webhooks.ts) | Check `Authorization`, publish the body, reply in under a second | Rarely |
+| [`api/queues.ts`](api/queues.ts) | One `case` per event type. Throw to retry, return to acknowledge | Yes |
+| [`vercel.json`](vercel.json) | Binds the `bask-events` topic to `api/queues.ts` | Only if you rename the topic |
+| `BASK_WEBHOOK_SECRET` | Shared secret, compared byte for byte to `Bearer <secret>` | Rotate from Vercel **Environment Variables** |
+
+Each exported symbol carries TSDoc with its contract and failure modes. Hover in your editor or read the source.
+
 ## Make it yours
 
-Everything you care about lives in [`api/queues.ts`](api/queues.ts). Add a `case` per event type and write to your database or CRM there.
+Everything you care about lives in [`api/queues.ts`](api/queues.ts). Add a `case` per event type and write to your database or CRM there. The TSDoc on `consume` lists the rules.
 
 - **Upsert, don't insert.** Bask and Vercel Queues both deliver at-least-once. Key on `orderId`, `treatmentId`, `subscriptionId`, or `patientId` with `type` and `eventCode`.
 - **Don't assume order.** An `orderUpdated` can land before its `newOrder`. Route on `eventCode` and your own stored state.
@@ -59,10 +75,17 @@ Event reference: [docs.bask.health/platform/webhooks](https://docs.bask.health/p
 
 ## Local development
 
-`send` needs the project's Vercel credentials.
+`send` needs the project's Vercel credentials, so link before you run.
 
-```bash
+```bash filename="terminal"
 vercel link
 vercel env pull
 vercel dev
 ```
+
+## Next steps
+
+- [Deploy a webhook consumer on Vercel](https://docs.bask.health/platform/webhooks/vercel) - the full walkthrough of this template, step by step.
+- [Delivery guarantees](https://docs.bask.health/platform/webhooks/reliability) - retry counts, the auto-disable rule, and recovery after downtime.
+- [Webhooks overview](https://docs.bask.health/platform/webhooks) - every event type and the fields common to all payloads.
+- [Vercel Queues](https://vercel.com/docs/queues) - retention, delays, and consumer groups for fanning one topic out to several consumers.
