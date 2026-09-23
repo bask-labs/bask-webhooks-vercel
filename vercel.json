@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/queues.ts": {
+      "experimentalTriggers": [{ "type": "queue/v2beta", "topic": "bask-events" }]
+    }
+  }
+}

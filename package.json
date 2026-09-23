@@ -1,0 +1,15 @@
+{
+  "name": "bask-webhooks-vercel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vercel/queue": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^5"
+  }
+}
