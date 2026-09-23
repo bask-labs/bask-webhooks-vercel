@@ -3,14 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks",
-    "typecheck": "tsc --noEmit"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@vercel/queue": "^0.6.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "tsx": "^4"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

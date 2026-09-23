@@ -50,14 +50,16 @@ Drop the `Authorization` header and you get `401`.
 ## How it works
 
 ```text filename="Request path"
-Bask ─POST /api/webhooks─▶ api/webhooks.ts ─send("bask-events")─▶ Vercel Queue ─▶ api/queues.ts
-                           401 / 400 / 200                        retries here      your code
+Bask ─POST /api/webhooks─▶ api/webhooks.ts ─send("bask-events")─▶ Vercel Queue ─▶ api/queues.ts ─▶ handlers/<event>.ts
+                           401 / 400 / 200                        retries here      lookup only     your code
 ```
 
 | File | Job | Edit it? |
 |---|---|---|
 | [`api/webhooks.ts`](api/webhooks.ts) | Check `Authorization`, publish the body, reply in under a second | Rarely |
-| [`api/queues.ts`](api/queues.ts) | One `case` per event type. Throw to retry, return to acknowledge | Yes |
+| [`api/queues.ts`](api/queues.ts) | Looks up `handlers[type]` and runs it. Unknown types log and acknowledge | No |
+| [`handlers/index.ts`](handlers/index.ts) | Registry: Bask event name to handler | One line per new event |
+| [`handlers/*.ts`](handlers) | One file per event. Throw to retry, return to acknowledge | Yes |
 | [`vercel.json`](vercel.json) | Binds the `bask-events` topic to `api/queues.ts` | Only if you rename the topic |
 | `BASK_WEBHOOK_SECRET` | Shared secret, compared byte for byte to `Bearer <secret>` | Rotate from Vercel **Environment Variables** |
 
@@ -65,13 +67,41 @@ Each exported symbol carries TSDoc with its contract and failure modes. Hover in
 
 ## Make it yours
 
-Everything you care about lives in [`api/queues.ts`](api/queues.ts). Add a `case` per event type and write to your database or CRM there. The TSDoc on `consume` lists the rules.
+Adding an event is a new file plus one line. Never a `switch`.
+
+```ts filename="handlers/payment-succeeded.ts"
+import type { Handler } from "./types.js";
+
+type PaymentSucceeded = { paymentId: string; patientId: number; amount: number };
+
+const paymentSucceeded: Handler<PaymentSucceeded> = async (data) => {
+  // upsert keyed on data.paymentId
+};
+
+export default paymentSucceeded;
+```
+
+```ts filename="handlers/index.ts"
+import paymentSucceeded from "./payment-succeeded.js";
+
+export const handlers = {
+  newOrder,
+  orderUpdated,
+  paymentSucceeded,
+} satisfies Record<string, Handler<any>>;
+```
+
+`npm test` checks that every registry key is a real Bask event name. The TSDoc on `Handler` in [`handlers/types.ts`](handlers/types.ts) lists the rules:
 
 - **Upsert, don't insert.** Bask and Vercel Queues both deliver at-least-once. Key on `orderId`, `treatmentId`, `subscriptionId`, or `patientId` with `type` and `eventCode`.
 - **Don't assume order.** An `orderUpdated` can land before its `newOrder`. Route on `eventCode` and your own stored state.
 - **Keep the receiver thin.** Auth plus `send`, nothing else. Slow receivers count as failed deliveries and trip Bask's auto-disable rule.
 
 Event reference: [docs.bask.health/platform/webhooks](https://docs.bask.health/platform/webhooks)
+
+## Requirements
+
+- Node.js 24. `npm test` runs the TypeScript sources through `tsx`, no build step.
 
 ## Local development
 
