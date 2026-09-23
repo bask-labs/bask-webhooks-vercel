@@ -1,6 +1,6 @@
-import type { Handler } from "./types.js";
-import newOrder from "./new-order.js";
-import orderUpdated from "./order-updated.js";
+import type { Handler } from "./types";
+import newOrder from "./new-order";
+import orderUpdated from "./order-updated";
 
 /**
  * Event name to handler. This is the only file to touch when you add an event.

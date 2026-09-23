@@ -70,7 +70,7 @@ Each exported symbol carries TSDoc with its contract and failure modes. Hover in
 Adding an event is a new file plus one line. Never a `switch`.
 
 ```ts filename="handlers/payment-succeeded.ts"
-import type { Handler } from "./types.js";
+import type { Handler } from "./types";
 
 type PaymentSucceeded = { paymentId: string; patientId: number; amount: number };
 
@@ -82,7 +82,7 @@ export default paymentSucceeded;
 ```
 
 ```ts filename="handlers/index.ts"
-import paymentSucceeded from "./payment-succeeded.js";
+import paymentSucceeded from "./payment-succeeded";
 
 export const handlers = {
   newOrder,
@@ -101,7 +101,7 @@ Event reference: [docs.bask.health/platform/webhooks](https://docs.bask.health/p
 
 ## Requirements
 
-- Node.js 24. `npm test` runs the TypeScript sources through `tsx`, no build step.
+- Node.js 24. `npm test` runs the TypeScript sources through `tsx`. Vercel bundles each function with ncc at deploy time, so relative imports carry no extension.
 
 ## Local development
 

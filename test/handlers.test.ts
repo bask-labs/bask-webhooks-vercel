@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handlers } from "../handlers/index.js";
+import { handlers } from "../handlers";
 
 // Every `type` Bask sends. Source: https://docs.bask.health/platform/webhooks
 const BASK_EVENTS = new Set([

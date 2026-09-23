@@ -1,4 +1,4 @@
-import type { Handler } from "./types.js";
+import type { Handler } from "./types";
 
 /** Fields of `newOrder` this handler reads. */
 type NewOrder = { orderId: string; patientId: number };

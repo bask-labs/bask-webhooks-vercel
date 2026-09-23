@@ -1,6 +1,6 @@
 import { handleCallback } from "@vercel/queue";
-import { handlers } from "../handlers/index.js";
-import type { BaskEvent, Handler } from "../handlers/types.js";
+import { handlers } from "../handlers";
+import type { BaskEvent, Handler } from "../handlers/types";
 
 /**
  * Consumer for the `bask-events` topic (wired in `vercel.json`).
